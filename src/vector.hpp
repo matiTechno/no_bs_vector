@@ -50,7 +50,6 @@ public:
         vector()
     {
         reserve(rhs.m_capacity);
-        mem = static_cast<T*>(::operator new(m_capacity * sizeof(T)));
         for(auto it = rhs.cbegin(); it != rhs.cend(); ++it)
             push_back(*it);
     }

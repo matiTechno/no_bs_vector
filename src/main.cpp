@@ -40,7 +40,7 @@ int main()
     {
         auto time = std::chrono::high_resolution_clock::now();
 
-        for(std::size_t i = 0; i < 1000000; ++i)
+        for(std::size_t i = 0; i < 1000; ++i)
             mtech_vector.push_back(My_class());
 
         auto new_time = std::chrono::high_resolution_clock::now();
@@ -49,7 +49,7 @@ int main()
     {
         auto time = std::chrono::high_resolution_clock::now();
 
-        for(std::size_t i = 0; i < 1000000; ++i)
+        for(std::size_t i = 0; i < 1000; ++i)
             stl_vector.push_back(My_class());
 
         auto new_time = std::chrono::high_resolution_clock::now();
@@ -116,7 +116,7 @@ int main()
         it2 - 5;
         it2 - it1;
         *it2;
-        auto z = it1->x;
+        auto z = test.begin()->x;
         ++z;
         test.clear();
     }
