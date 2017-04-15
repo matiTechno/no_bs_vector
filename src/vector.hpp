@@ -9,6 +9,9 @@
 namespace mtech
 {
 
+// exception guarantees
+// copy assignment operator .... basic
+// reserve ..................... strong
 template<typename T>
 class vector
 {
@@ -58,36 +61,39 @@ public:
 
     vector& operator=(const vector& rhs)
     {
-        if(this == &rhs)
-            return *this;
+        if(this != &rhs)
+        {
+            if(rhs.m_capacity > m_capacity)
+                reserve(rhs.m_capacity);
 
-        if(rhs.m_capacity > m_capacity)
-            reserve(rhs.m_capacity);
+            std::size_t i = 0;
+            auto init_size = m_size;
 
-        std::size_t i = 0;
-        for(; i < m_size && rhs.m_size; ++i)
-            operator[](i) = rhs[i];
-        for(; i < rhs.m_size; ++i)
-            push_back(rhs[i]);
-        for(; i < m_size; ++i)
-            operator[](i).~T();
-
+            for(; i < m_size && rhs.m_size; ++i)
+                operator[](i) = rhs[i];
+            for(; i < rhs.m_size; ++i)
+                push_back(rhs[i]);
+            for(; i < init_size; ++i)
+            {
+                operator[](i).~T();
+                --m_size;
+            }
+        }
         return *this;
     }
 
     vector& operator=(vector&& rhs) noexcept
     {
-        if(this == &rhs)
-            return *this;
+        if(this != &rhs)
+        {
+            this->~vector();
+            mem = rhs.mem;
+            m_capacity = rhs.m_capacity;
+            m_size = rhs.m_size;
 
-        this->~vector();
-        mem = rhs.mem;
-        m_capacity = rhs.m_capacity;
-        m_size = rhs.m_size;
-
-        rhs.m_size = 0;
-        rhs.mem = nullptr;
-
+            rhs.m_size = 0;
+            rhs.mem = nullptr;
+        }
         return *this;
     }
 
@@ -118,7 +124,7 @@ public:
         if(m_capacity >= new_cap)
             return;
 
-        T* temp_mem;
+        T* temp_mem = nullptr;
         std::size_t num_new = 0;
         try
         {
