@@ -4,11 +4,11 @@
 #include <iterator>
 #include <initializer_list>
 #include <new>
+#include <utility>
 
 namespace mtech
 {
 
-// todo: exception safety
 template<typename T>
 class vector
 {
@@ -47,7 +47,7 @@ public:
             push_back(*it);
     }
 
-    vector(vector&& rhs):
+    vector(vector&& rhs) noexcept:
         mem(rhs.mem),
         m_capacity(rhs.m_capacity),
         m_size(rhs.m_size)
@@ -75,7 +75,7 @@ public:
         return *this;
     }
 
-    vector& operator=(vector&& rhs)
+    vector& operator=(vector&& rhs) noexcept
     {
         if(this == &rhs)
             return *this;
@@ -112,15 +112,31 @@ public:
     {return const_iterator(mem + m_size);}
 
     // capacity
+    // strong exception guarantee
     void reserve(std::size_t new_cap)
     {
         if(m_capacity >= new_cap)
             return;
 
-        T* temp_mem = static_cast<T*>(operator new(new_cap * sizeof(T)));
+        T* temp_mem;
+        std::size_t num_new = 0;
+        try
+        {
+            temp_mem = static_cast<T*>(::operator new(new_cap * sizeof(T)));
 
-        for(std::size_t i = 0; i < m_size; ++i)
-            new(temp_mem + i) T(std::move(operator[](i)));
+            for(std::size_t i = 0; i < m_size; ++i)
+            {
+                new(temp_mem + i) T(std::move_if_noexcept(operator[](i)));
+                ++num_new;
+            }
+        }
+        catch(const std::exception& e)
+        {
+            for(std::size_t i = 0; i < num_new; ++i)
+                operator[](i).~T();
+            ::operator delete(temp_mem);
+            throw e;
+        }
 
         this->~vector();
         mem = temp_mem;
