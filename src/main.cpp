@@ -44,8 +44,8 @@ int main()
     {
         auto time = std::chrono::high_resolution_clock::now();
 
-        for(std::size_t i = 0; i < 1000; ++i)
-            mtech_vector.push_back(My_class());
+        for(std::size_t i = 0; i < 1'000'0; ++i)
+            mtech_vector.insert(mtech_vector.begin(), My_class());
 
         auto new_time = std::chrono::high_resolution_clock::now();
         std::cout << "mtech time(s): " << std::chrono::duration<float>(new_time - time).count() << std::endl;
@@ -53,8 +53,8 @@ int main()
     {
         auto time = std::chrono::high_resolution_clock::now();
 
-        for(std::size_t i = 0; i < 1000; ++i)
-            stl_vector.push_back(My_class());
+        for(std::size_t i = 0; i < 1'000'0; ++i)
+            stl_vector.insert(stl_vector.begin(), My_class());
 
         auto new_time = std::chrono::high_resolution_clock::now();
         std::cout << "stl time(s): " << std::chrono::duration<float>(new_time - time).count() << std::endl;

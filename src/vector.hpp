@@ -4,7 +4,6 @@
 #include <iterator>
 #include <initializer_list>
 #include <new>
-#include "assert.h"
 
 namespace mtech
 {
