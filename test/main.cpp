@@ -2,14 +2,24 @@
 #include "catch.hpp"
 #include "vector.hpp"
 
-unsigned int Factorial( unsigned int number ) {
-  return number > 1 ? Factorial(number-1)*number : 1;
-}
+TEST_CASE("size and capacity", "[vector]")
+{
+    mtech::vector<int> vec(6, 55);
 
-TEST_CASE( "Factorials are computed", "[factorial]" ) {
-    REQUIRE( Factorial(0) == 1 );
-    REQUIRE( Factorial(1) == 1 );
-    REQUIRE( Factorial(2) == 2 );
-    REQUIRE( Factorial(3) == 6 );
-    REQUIRE( Factorial(10) == 3628800 );
+    REQUIRE(vec.capacity() >= 6);
+    REQUIRE(vec.size() == 6);
+
+    SECTION("reserving bigger")
+    {
+        vec.reserve(100);
+
+        REQUIRE(vec.capacity() >= 100);
+        REQUIRE(vec.size() == 6);
+    }
+
+    SECTION("reserving smaller")
+    {
+        REQUIRE(vec.capacity() >= 6);
+        REQUIRE(vec.size() == 6);
+    }
 }

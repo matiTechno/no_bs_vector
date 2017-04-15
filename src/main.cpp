@@ -22,13 +22,17 @@ public:
     Lol(const std::string& string, int x, bool y):
         string(string),
         x(x),
-        y(y)
+        y(y),
+        vec(100, 100)
     {
         y = !y;
+        ptr = std::make_shared<double>(100);
     }
     std::string string;
     int x;
     bool y;
+    std::vector<int> vec;
+    std::shared_ptr<double> ptr;
 };
 
 int main()
