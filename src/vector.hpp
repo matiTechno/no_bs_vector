@@ -9,14 +9,7 @@
 namespace mtech
 {
 
-// to do: case of allocation failure
-// ...... object creation failure
-// testing
-// emplecing and exception safety
-// some definitions are outside class to avoid syntax bugs
-// (I don't care about inlining stuff for now)
-// why scope resolution operator is not needed for iterator as parameter type
-// in vector functions outside class definition
+// todo: exception safety
 template<typename T>
 class vector
 {
@@ -25,10 +18,11 @@ public:
     class const_iterator;
 
     vector():
-        m_capacity(1),
+        mem(nullptr),
+        m_capacity(0),
         m_size(0)
     {
-        mem = static_cast<T*>(operator new(m_capacity * sizeof(T)));
+        reserve(1);
     }
     explicit vector(std::size_t count, const T& value = T()):
         vector()
@@ -50,7 +44,7 @@ public:
         vector()
     {
         reserve(rhs.m_capacity);
-        for(auto it = rhs.cbegin(); it != rhs.cend(); ++it)
+        for(auto it = rhs.begin(); it != rhs.end(); ++it)
             push_back(*it);
     }
 
@@ -106,13 +100,13 @@ public:
     }
 
     // iterators
-    iterator begin()
+    iterator begin() const
     {return iterator(mem);}
 
     const_iterator cbegin() const
     {return const_iterator(mem);}
 
-    iterator end()
+    iterator end() const
     {return iterator(mem + m_size);}
 
     const_iterator cend() const
@@ -179,7 +173,7 @@ public:
 
     // decltype(auto) just 4fun
     template<typename ...Args>
-    decltype(auto) emplace(const_iterator pos, Args&&... params);
+    decltype(auto) emplace(const_iterator pos, Args&&... args);
 
     iterator erase(const_iterator pos);
 
@@ -194,16 +188,16 @@ public:
     }
 
     template<typename ...Args>
-    void emplace_back(Args&&... params)
+    void emplace_back(Args&&... args)
     {
         if_full();
-        new(mem + m_size) T(std::forward<Args>(params)...);
+        new(mem + m_size) T(std::forward<Args>(args)...);
         ++m_size;
     }
 
     void pop_back()
     {
-        (mem + m_size - 1)->~T();
+        (end() - 1)->~T();
         --m_size;
     }
 
@@ -215,16 +209,19 @@ private:
     void if_full()
     {
         if(m_size == m_capacity)
-            reserve(m_capacity * 2 + 1);
+            reserve(m_capacity * 2);
     }
 
-    void shift_to_end_by_one(const_iterator last_excluded);
+    // does not call if_full()
+    void shift_to_right_by_one(const_iterator first_included);
 };
 
 template<typename T>
 class vector<T>::const_iterator
 {
 public:
+    friend class iterator;
+
     typedef std::ptrdiff_t difference_type;
     typedef T value_type;
     typedef const T* pointer;
@@ -298,6 +295,8 @@ public:
     {this->ptr -= count; return *this;}
     iterator operator-(std::size_t count) const
     {return this->ptr - count;}
+    std::ptrdiff_t operator-(const const_iterator& rhs)
+    {return this->ptr - rhs.ptr;}
     T& operator*()
     {return const_cast<T&>(const_iterator::operator*());}
     T* operator->()
@@ -305,12 +304,12 @@ public:
 };
 
 template<typename T>
-void vector<T>::shift_to_end_by_one(const_iterator last_excluded)
+void vector<T>::shift_to_right_by_one(const_iterator first_included)
 {
     new(&*end()) T(std::move(*(end() - 1)));
     ++m_size;
 
-    for(auto it = end() - 2; it != last_excluded; --it)
+    for(auto it = end() - 2; it != first_included; --it)
         *it = std::move(*(it - 1));
 }
 
@@ -327,50 +326,47 @@ typename vector<T>::iterator vector<T>::insert(const_iterator pos, U&& item)
     auto diff = pos - begin();
     if_full();
     auto new_pos = begin() + diff;
-    shift_to_end_by_one(new_pos);
-    *new_pos = T(std::forward<U>(item));
+    shift_to_right_by_one(new_pos);
+    *new_pos = std::forward<U>(item);
     return new_pos;
 }
 
 template<typename T>
 template<typename ...Args>
-decltype(auto) vector<T>::emplace(const_iterator pos, Args&&... params)
+decltype(auto) vector<T>::emplace(const_iterator pos, Args&&... args)
 {
     if(pos == end())
     {
         if_full();
-        emplace_back(std::forward<Args>(params)...);
+        emplace_back(std::forward<Args>(args)...);
         return end() - 1;
     }
     auto diff = pos - begin();
     if_full();
     auto new_pos = begin() + diff;
-    shift_to_end_by_one(new_pos);
+    shift_to_right_by_one(new_pos);
     new_pos->~T();
-    new(&*new_pos) T(std::forward<Args>(params)...);
+    new(&*new_pos) T(std::forward<Args>(args)...);
     return new_pos;
 }
 
 template<typename T>
 typename vector<T>::iterator vector<T>::erase(const_iterator pos)
-{
-    for(auto it = iterator(pos); it != end() - 1; ++it)
-        *it = std::move(*(it + 1));
-    (end() - 1)->~T();
-    --m_size;
-
-    return iterator(pos);
-}
+{return erase(pos, pos);}
 
 template<typename T>
 typename vector<T>::iterator vector<T>::erase(const_iterator first, const_iterator last)
 {
-    auto to_del = last - first + 1;
-    for(auto it = iterator(first); it != end() - to_del; ++it)
-        *it = std::move(*(it + to_del));
-    (end() - 1)->~T();
-    m_size -= to_del;
+    auto num_to_erase = last - first + 1;
+    auto it_erase = end() - num_to_erase;
 
+    for(auto it = iterator(first); it != it_erase; ++it)
+        *it = std::move(*(it + num_to_erase));
+
+    for(; it_erase != end(); ++it_erase)
+        it_erase->~T();
+
+    m_size -= num_to_erase;
     return iterator(first);
 }
 
