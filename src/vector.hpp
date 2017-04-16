@@ -196,6 +196,7 @@ public:
     template<typename ...Args>
     decltype(auto) emplace(const_iterator pos, Args&&... args);
 
+    // returns iterator following last removed element
     iterator erase(const_iterator pos);
 
     iterator erase(const_iterator first, const_iterator last);
