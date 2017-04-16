@@ -69,7 +69,7 @@ public:
             std::size_t i = 0;
             auto init_size = m_size;
 
-            for(; i < m_size && rhs.m_size; ++i)
+            for(; i < m_size && i < rhs.m_size; ++i)
                 operator[](i) = rhs[i];
             for(; i < rhs.m_size; ++i)
                 push_back(rhs[i]);
